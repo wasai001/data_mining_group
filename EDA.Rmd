@@ -1,0 +1,308 @@
+---
+title: "Airline, Airport choice - EDA"
+author: "Huy Le"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_notebook
+---
+
+Commented header  
+=========================================
+
+```{r echo = TRUE}
+# Course: 
+# Title: 
+# Purpose: 
+# Date: 
+# Author: Huy LE
+```
+
+
+Clear environment of variables and packages  
+=========================================
+
+```{r}
+
+rm(list = ls(all = TRUE)) 
+
+# Clear environmet of packages
+if(is.null(sessionInfo()$otherPkgs) == FALSE)lapply(paste("package:", names(sessionInfo()$otherPkgs), sep=""), detach, character.only = TRUE, unload = TRUE)
+
+```
+
+Load packages that include different functions  
+=========================================
+
+
+```{r }
+# Load libraries
+library(tidyverse)
+library(GGally)
+library(gridExtra)
+library("readxl")
+library(janitor)
+
+
+```
+
+Load data and begin new EDA  
+=========================================
+
+
+```{r}
+# Load data 
+df <- read_excel("./raw_data/airport_choice_survey_EN_ver2.0_Capstone.xlsx")
+df1<-df[-c(1,13,15,16,27)]
+# Examine data structure 
+str(df1)
+```
+
+```{r}
+df <- df %>% mutate(Airport = ifelse(Airport==1,0,1))
+dat <- df %>% select(-ID) %>%
+        mutate(Airport = factor(ifelse(Airport==1, 0 ,1), levels= c(0,1)),
+               Airline = factor(Airline, levels= c(1,2,3,4)),
+               Gender = factor(Gender, levels= c(1,2)),
+               Nationality = factor(Nationality, levels= c(1,2,3,4,5)),
+               TripPurpose = factor(TripPurpose, levels= c(1,2,3,4)),
+               ProvinceResidence = factor(ProvinceResidence, levels= c(1,2,3,4,5,6,7,8)),
+               GroupTravel = factor(GroupTravel, levels= c(1,2)),
+               FrequentFlightDestination = factor(FrequentFlightDestination, levels= c(1,2,3,4,5,6,7)),
+               Destination = factor(Destination, levels= c(1,2,3,4)),
+               DepartureTime = factor(DepartureTime, levels= c(1,2,3,4)),
+               SeatClass = factor(SeatClass, levels= c(1,2,3)),
+               ModeTransport = factor(ModeTransport, levels= c(1,2,3,4,5,6,7,8,9,10,11)),
+               Occupation = factor(Occupation, levels= c(1,2,3,4,5,6,7,8,9,10,11,12)),
+               Income = factor(Income, levels= c(1,2,3,4,5,6,7)),
+               MileageAirline = factor(MileageAirline, levels= c(1,2,3,4,5)),
+               DepartureHr = as.integer(DepartureHr)) %>% as.data.frame()
+
+summary(dat)
+typeof(dat)
+#check na value
+sapply(df, function(x) sum(is.na(x)))
+
+sapply(df, function(x) sum(is.infinite(x)))
+```
+
+               ID                   Airport                   Airline                       Age                    Gender 
+                        0                         0                        10                         1                         3 
+              Nationality               TripPurpose              TripDuration           FlyingCompanion         ProvinceResidence 
+                        0                         0                         0                         0                         0 
+              GroupTravel           NoTripsLastYear FrequentFlightDestination               Destination                  FlightNo 
+                        0                         0                        32                         5                       142 
+              DepartureHr               DepartureMn             DepartureTime                 SeatClass                   Airfare 
+                       33                       120                         0                         4                       155 
+              NoTransport             ModeTransport                AccessCost                AccessTime                Occupation 
+                        0                         0                       197                        97                         0 
+                   Income            MileageAirline                   Mileage 
+                      132                       251                       398 
+
+1. Univariate non-graphical -- Categorical
+=========================================
+##Step 1
+
+```{r}
+count_hist<- function(plot){
+  plot + geom_histogram(bins = 52)+
+    theme_bw() + 
+    theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) + 
+    labs(y ="Count")
+}
+
+count_hist(ggplot(df, aes(Mileage)))
+
+count_bargraph <- function(plot) {
+ plot + 
+    geom_bar(position = "dodge") +
+    theme_bw() + 
+    theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) + 
+    labs(y ="Count")
+}
+count_bargraph(ggplot(df, aes(Nationality)))
+```
+
+##Step 2
+
+```{r}
+ggpairs(df[,c("Age", "TripDuration", "NoTripsLastYear", "DepartureHr", "Mileage","Airfare", "NoTransport","AccessCost","AccessTime")])
+
+ggpairs(df)
+```
+
+##Step 3
+
+
+```{r}
+df1 <- df %>% select(-FlightNo)
+
+cor(df[,c("Age", "TripDuration", "NoTripsLastYear", "DepartureHr", "Mileage","Airfare", "NoTransport","AccessCost","AccessTime")], 
+      use = "complete.obs")
+```
+
+```{r}
+#Function for table
+count_crosstable <- function(x, y, name){
+   x = enquo(x)
+   y = enquo(y)
+   dat %>%
+      tabyl(!!x, !!y) %>%
+      adorn_totals(where = c('row','col'))
+      #adorn_pct_formatting(digits = 0 ) %>%
+}
+
+count_crosstable(Airport, Airline,"airport vs Airline")
+count_crosstable(Airport, Gender,"airport vs Gender")
+count_crosstable(Airport, Nationality,"airport vs Nationality")
+count_crosstable(Airport, TripPurpose,"airport vs TripPurpose")
+count_crosstable(Airport, ProvinceResidence,"airport vs Tripduation")
+count_crosstable(Airport, Income,"airport vs Tripduation")
+```
+Airport   1   2  3   4 NA_ Total
+       1  76  54 57  44   8   239
+       2  77  53 24  93   2   249
+   Total 153 107 81 137  10   488 
+   
+   
+gender
+Airport   1   2 NA_ Total
+       1 115 122   2   239
+       2 114 134   1   249
+   Total 229 256   3   488
+  
+  Nationality
+ Airport   1  2  3  4  5 Total
+       1 205  7  1 19  7   239
+       2 173 26 41  2  7   249
+   Total 378 33 42 21 14   488
+
+ProvinceResidence
+Airport   1  2   3  4  5  6 7  8 Total
+       1  99 11  68  8 26  5 2 20   239
+       2  87 11  60  6  5  5 4 71   249
+   Total 186 22 128 14 31 10 6 91   488
+
+Income
+Airport  1  2  3  4  5  6  7 NA_ Total
+       0 10 33 39 22 11  7  6 111   239
+       1 41 60 46 39 22 12  8  21   249
+   Total 51 93 85 61 33 19 14 132   488
+```{r}
+dat %>% ggplot(aes(x = Airline, fill =Airport)) +
+        geom_bar(stat = "count")
+```
+```{r}
+dat %>% ggplot(aes(x = Airline,y= Airfare)) +
+        geom_boxplot()
+```
+
+```{r}
+dat %>% ggplot(aes(x = Airport, y = AccessTime)) +
+        geom_boxplot()
+dat %>% ggplot(aes(x = Airport, y = AccessCost)) +
+        geom_boxplot()
+dat %>% ggplot(aes(x = Airport, y = Age)) +
+        geom_boxplot()
+
+dat %>% ggplot(aes(x = Income, fill = Airport)) +
+        geom_bar(stat = "count")
+
+dat["AccessCost"]
+```
+
+- Most of peopel with various income choose airport 1
+- People who do not reveal their income chose airport 0
+
+```{r}
+dat %>% ggplot(aes(x = Airfare, y = AccessCost, colour = Airport)) +
+        geom_point(alpha =0.5)
+```
+
+```{r}
+dat %>% ggplot(aes(x = Mileage, y = Airfare, colour = Airport)) +
+        geom_point(alpha =0.5)
+```
+
+```{r}
+airportlist <- c("Airline","Gender","Nationality","TripPurpose","ProvinceResidence","GroupTravel","FrequentFlightDestination","Destination","DepartureTime","SeatClass","ModeTransport","Occupation","Income","MileageAirline")
+
+airline_list <- c("Airport","Gender","Nationality","TripPurpose","ProvinceResidence","GroupTravel","FrequentFlightDestination","Destination","DepartureTime","SeatClass","ModeTransport","Occupation","Income","MileageAirline")
+
+numlist <- c("Age", "TripDuration", "NoTripsLastYear", "DepartureHr", "Mileage","Airfare", "NoTransport","AccessCost","AccessTime")
+
+bar_chart <- function(listx, yaxis){
+  #y = enquo(yaxis)
+  for(i in 1:length(listx)){
+    #x <- sym(listx[i])
+    p<- dat %>% ggplot(aes_string(x = listx[i], fill= yaxis)) +
+            geom_bar(stat = "count", position ="dodge") 
+    print(p)
+  }
+}
+bar_chart(airportlist, "Airport")
+
+
+bar_chart(airline_list, "Airline")
+
+
+dat %>% ggplot(aes(x = SeatClass, fill =Airport)) +
+        geom_bar(stat = "count") +
+        facet_grid(Airline ~ .)
+
+dat %>% ggplot(aes(x = TripPurpose, fill =Airport)) +
+        geom_bar(stat = "count") +
+        facet_grid(Airline ~ .)
+ModeTransport
+
+dat %>% ggplot(aes(x = ModeTransport, fill =Airport)) +
+        geom_bar(stat = "count", position = "dodge") 
+
+dat %>% ggplot(aes(x = NoTransport, fill =Airport)) +
+        geom_bar(stat = "count", position = "dodge") 
+
+#DepartureTime
+dat %>% ggplot(aes(x = DepartureTime, fill =Airport)) +
+        geom_bar(stat = "count", position = "dodge") 
+
+# departure time has strong effect on traveler choice
+
+
+```
+
+  
+"Airport","Airline","Age","Gender","Nationality","TripPurpose","TripDuration","FlyingCompanion","ProvinceResidence","GroupTravel","NoTripsLastYear","FrequentFlightDestination","Destination","FlightNo","DepartureHr","DepartureMn","DepartureTime","SeatClass","Airfare","NoTransport","ModeTransport","AccessCost","AccessTime","Occupation","Income","MileageAirline","Mileage"
+```{r}
+library(imputeTS)
+library(fastDummies)
+df2 <- df
+
+dummy_cols(df2, select_columns =- c("Age", "TripDuration", "NoTripsLastYear", "DepartureHr", "Mileage","Airfare", "NoTransport","AccessCost","AccessTime","FlightNo"), remove_first_dummy = TRUE)
+typeof(df)
+
+fit_linear <-glm(Airport ~ Airline + 
+                   #Age +
+                   #Gender +
+                   #Destination + 
+                   Income + 
+                   #Mileage + 
+                   AccessTime +
+                   #ProvinceResidence+
+                   AccessCost+
+                   #DepartureTime +
+                   Airfare 
+                   #FrequentFlightDestination +
+                   #ModeTransport
+                 ,
+                 data =dat, na.action="na.omit",
+                 family = "binomial")
+
+summary(fit_linear)
+
+```
+```{r}
+
+```
+
