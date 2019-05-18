@@ -1,0 +1,56 @@
+---
+title: "Airline, Airport choice - EDA"
+author: "Huy Le"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_notebook
+---
+
+```{r}
+rm(list = ls(all = TRUE)) 
+
+# Clear environmet of packages
+if(is.null(sessionInfo()$otherPkgs) == FALSE)lapply(paste("package:", names(sessionInfo()$otherPkgs), sep=""), detach, character.only = TRUE, unload = TRUE)
+
+```
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(GGally)
+library(gridExtra)
+library("readxl")
+library(janitor)
+
+```
+
+```{r}
+# Load data 
+df <- read_excel("../raw_data/airport_choice_survey_EN_ver2.0_Capstone.xlsx")
+df1<-df[-c(1,13,15,16,27)]
+# Examine data structure 
+str(df1)
+```
+
+```{r}
+df$FrequentDestination1 <- str_detect(df$FrequentFlightDestination, '1')
+df$FrequentDestination2 <- str_detect(df$FrequentFlightDestination, '2')
+df$FrequentDestination3 <- str_detect(df$FrequentFlightDestination, '3')
+df$FrequentDestination4 <- str_detect(df$FrequentFlightDestination, '4')
+df$FrequentDestination5 <- str_detect(df$FrequentFlightDestination, '5')
+df$FrequentDestination6 <- str_detect(df$FrequentFlightDestination, '6')
+df$FrequentDestination7 <- str_detect(df$FrequentFlightDestination, '7')
+
+```
+```{r}
+df$MileageAirline1 <- str_detect(df$MileageAirline, '1')
+df$MileageAirline2 <- str_detect(df$MileageAirline, '2')
+df$MileageAirline3 <- str_detect(df$MileageAirline, '3')
+df$MileageAirline4 <- str_detect(df$MileageAirline, '4')
+df$MileageAirline5 <- str_detect(df$MileageAirline, '5')
+
+```
+
+```{r}
+write_csv(df, "DataSplitted.csv")
+```
+
